@@ -16,7 +16,8 @@ const PORT = process.env.PORT || 3000;
 const app = express();
 app.use(cors());
 app.get('/location', getLocation);
-
+app.get('/movies', getMov);
+app.get('/yelp', getYelp);
 // Get Location data
 function getLocation (request, response) {
   return searchToLatLong(request.query.data)
@@ -34,7 +35,7 @@ app.get('/weather', (request, response) => {
   // console.log(weatherGet);
 });
 //movies-----------------------------
-app.get('/movies', getMov);
+
 //mov func
 function getMov (request, response) {
   return searchMovs(request.query.data)
@@ -65,7 +66,7 @@ function Movie(movie) {
   this.released_on = movie.release_date;
 }
 //yelp-----------------------------------------------------------------------------------------------
-app.get('/yelp', getYelp);
+
 
 function getYelp (request, response){
   return searchYelps(request.query.data)
@@ -91,7 +92,7 @@ function Bsns (bsns){
   this.url = bsns.url;
 }
 
-// from class
+// location 
 function searchToLatLong(query){
   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GEOCODE_API_KEY}`;
   return superAgent.get(url)
@@ -103,7 +104,14 @@ function searchToLatLong(query){
     .catch(err => console.error(err));
 
 }
-
+function Location(location, query){
+  this.query = query;
+  this.formatted_query = location.formatted_address;
+  this.latitude = location.geometry.location.lat;
+  this.longitude = location.geometry.location.lng;
+  lat = location.geometry.location.lat;
+  long = location.geometry.location.lng;
+}
 //yelp API you will have to use a .set inside, in the query function....
 
 function searchWeather(query){
@@ -124,15 +132,6 @@ function searchWeather(query){
       return wArr;
     })
     .catch(err => console.error(err));
-}
-
-function Location(location, query){
-  this.query = query;
-  this.formatted_query = location.formatted_address;
-  this.latitude = location.geometry.location.lat;
-  this.longitude = location.geometry.location.lng;
-  lat = location.geometry.location.lat;
-  long = location.geometry.location.lng;
 }
 
 // Error messages
