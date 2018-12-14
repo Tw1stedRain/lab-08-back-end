@@ -2,6 +2,7 @@
 
 //Application Dependencies
 const express = require('express');
+const pg = require('pg');
 const cors = require('cors');
 const superAgent = require('superagent');
 let lat;
@@ -11,19 +12,52 @@ let long;
 require('dotenv').config();
 
 const PORT = process.env.PORT || 3000;
-
+//postgress setup
+const client = new pg.Client(process.env.DATABASE_URL);
+client.connect();
+client.on('error', err => console.error(err));
 //app
 const app = express();
 app.use(cors());
 app.get('/location', getLocation);
-app.get('/movies', getMov);
-app.get('/yelp', getYelp);
+// app.get('/movies', getMov);
+// app.get('/yelp', getYelp);
 // Get Location data
-function getLocation (request, response) {
-  return searchToLatLong(request.query.data)
-    .then(locationData => {
-      response.send(locationData);}
-    );
+// function getLocation (request, response) {
+//   return searchToLatLong(request.query.data)
+//     .then(locationData => {
+//       response.send(locationData);}
+//     );
+// }
+function getLocation(request, response){
+  const SQL = 'SELECT * FROM locations WHERE search_query=$1';
+  const values = [request.query.data];
+  return client.query(SQL, values)
+    .then(data => {
+      if(data.rows){
+        console.log('from teh dataBass');
+        response.status(200).send(data.rows[0]);
+      }else {
+        const URL = `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GEOCODE_API_KEY}`;
+        return superAgent.get(URL)
+          .then(result => {
+            console.log('from teh googs');
+            let location = new Location(result.body.results[0]);
+            let SQL = `INSERT INTO locations 
+          (search_query, formatted_query, latitude, longitude)
+          VALUES($1, $2, $3, $4)`;
+
+            client.query(SQL, [query, location.formatted_query, location.latitude, location.longitude]);//5ends with a sucseful storage
+            response.status(200).send(location);
+          });
+      }
+      // console.log(data);
+      // response.status(200).send(data); leftover artifact
+    })
+    .catch(err => {
+      console.error(err);
+    });
+
 }
 
 // Get weather data
@@ -92,7 +126,7 @@ function Bsns (bsns){
   this.url = bsns.url;
 }
 
-// location 
+// location
 function searchToLatLong(query){
   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GEOCODE_API_KEY}`;
   return superAgent.get(url)
