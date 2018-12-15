@@ -22,42 +22,102 @@ app.use(cors());
 app.get('/location', getLocation);
 // app.get('/movies', getMov);
 // app.get('/yelp', getYelp);
+
 // Get Location data
-// function getLocation (request, response) {
-//   return searchToLatLong(request.query.data)
-//     .then(locationData => {
-//       response.send(locationData);}
-//     );
-// }
+// help from erin and skyler
 function getLocation(request, response){
+  let searchHandler = {
+    cacheHit: (data) => {
+      console.log('from teh dataBass');
+      response.status(200).send(data);
+    },
+    cacheMiss: (query) => {
+      return searchLocation(query)
+        .then(result => {
+          response.send(result);
+        }).catch(err=>console.error(err));
+    }
+  }
+  lookForLocation(request.query.data, searchHandler);
+}
+
+function lookForLocation (query, handler) {
   const SQL = 'SELECT * FROM locations WHERE search_query=$1';
-  const values = [request.query.data];
+  const values = [query];
   return client.query(SQL, values)
     .then(data => {
-      if(data.rows){
+      if(data.rowCount){
         console.log('from teh dataBass');
-        response.status(200).send(data.rows[0]);
+        handler.cacheHit(data.rows[0]);
       }else {
-        const URL = `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GEOCODE_API_KEY}`;
-        return superAgent.get(URL)
-          .then(result => {
-            console.log('from teh googs');
-            let location = new Location(result.body.results[0]);
-            let SQL = `INSERT INTO locations 
-          (search_query, formatted_query, latitude, longitude)
-          VALUES($1, $2, $3, $4)`;
-
-            client.query(SQL, [query, location.formatted_query, location.latitude, location.longitude]);//5ends with a sucseful storage
-            response.status(200).send(location);
-          });
+        handler.cacheMiss(query);
       }
-      // console.log(data);
-      // response.status(200).send(data); leftover artifact
-    })
-    .catch(err => {
-      console.error(err);
-    });
+    }).catch(err => console.error(err));
+}
 
+function searchLocation (query){
+  const URL = `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GEOCODE_API_KEY}`;
+
+  return superAgent.get(URL)
+    .then(result => {
+      console.log('from teh googs');
+      let location = new Location(result.body.results[0]);
+      let SQL = `INSERT INTO locations 
+        (search_query, formatted_query, latitude, longitude)
+        VALUES($1, $2, $3, $4)`;
+
+      return client.query(SQL, [query, location.formatted_query, location.latitude, location.longitude])
+        .then(() => {
+          console.log('stored to DB');
+          return location;//5ends with a sucseful storage
+        }).catch(err => console.error(err));
+    });
+}
+
+// return client.query(SQL, values)
+//   .then(data => {
+//     else {
+//       const URL = `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GEOCODE_API_KEY}`;
+//       return superAgent.get(URL)
+//         .then(result => {
+//           console.log('from teh googs');
+//           let location = new Location(result.body.results[0]);
+//           let SQL = `INSERT INTO locations
+//         (search_query, formatted_query, latitude, longitude)
+//         VALUES($1, $2, $3, $4)`;
+
+//           client.query(SQL, [query, location.formatted_query, location.latitude, location.longitude]);//5ends with a sucseful storage
+//           response.status(200).send(location);
+//         });
+//     }
+// console.log(data);
+// response.status(200).send(data); leftover artifact
+// })
+// .catch(err => {
+//   console.error(err);
+// });
+
+
+
+// location
+// function searchToLatLong(query){
+//   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GEOCODE_API_KEY}`;
+//   return superAgent.get(url)
+//     .then(geoData => {
+//       const location = new Location(geoData.body.results[0]);
+//       // console.log(location);
+//       return location;
+//     })
+//     .catch(err => console.error(err));
+
+// }
+function Location(location, query){
+  this. search_query = query;
+  this.formatted_query = location.formatted_address;
+  this.latitude = location.geometry.location.lat;
+  this.longitude = location.geometry.location.lng;
+  lat = location.geometry.location.lat;
+  long = location.geometry.location.lng;
 }
 
 // Get weather data
@@ -126,26 +186,7 @@ function Bsns (bsns){
   this.url = bsns.url;
 }
 
-// location
-function searchToLatLong(query){
-  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GEOCODE_API_KEY}`;
-  return superAgent.get(url)
-    .then(geoData => {
-      const location = new Location(geoData.body.results[0]);
-      // console.log(location);
-      return location;
-    })
-    .catch(err => console.error(err));
 
-}
-function Location(location, query){
-  this.query = query;
-  this.formatted_query = location.formatted_address;
-  this.latitude = location.geometry.location.lat;
-  this.longitude = location.geometry.location.lng;
-  lat = location.geometry.location.lat;
-  long = location.geometry.location.lng;
-}
 //yelp API you will have to use a .set inside, in the query function....
 
 function searchWeather(query){
