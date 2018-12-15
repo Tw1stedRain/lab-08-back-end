@@ -74,43 +74,6 @@ function searchLocation (query){
     });
 }
 
-// return client.query(SQL, values)
-//   .then(data => {
-//     else {
-//       const URL = `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GEOCODE_API_KEY}`;
-//       return superAgent.get(URL)
-//         .then(result => {
-//           console.log('from teh googs');
-//           let location = new Location(result.body.results[0]);
-//           let SQL = `INSERT INTO locations
-//         (search_query, formatted_query, latitude, longitude)
-//         VALUES($1, $2, $3, $4)`;
-
-//           client.query(SQL, [query, location.formatted_query, location.latitude, location.longitude]);//5ends with a sucseful storage
-//           response.status(200).send(location);
-//         });
-//     }
-// console.log(data);
-// response.status(200).send(data); leftover artifact
-// })
-// .catch(err => {
-//   console.error(err);
-// });
-
-
-
-// location
-// function searchToLatLong(query){
-//   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GEOCODE_API_KEY}`;
-//   return superAgent.get(url)
-//     .then(geoData => {
-//       const location = new Location(geoData.body.results[0]);
-//       // console.log(location);
-//       return location;
-//     })
-//     .catch(err => console.error(err));
-
-// }
 function Location(location, query){
   this. search_query = query;
   this.formatted_query = location.formatted_address;
