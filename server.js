@@ -20,8 +20,8 @@ client.on('error', err => console.error(err));
 const app = express();
 app.use(cors());
 app.get('/location', getLocation);
-// app.get('/movies', getMov);
-// app.get('/yelp', getYelp);
+app.get('/movies', getMov);
+app.get('/yelp', getYelp);
 
 // Get Location data
 // help from erin and skyler
